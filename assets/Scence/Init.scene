@@ -223,7 +223,7 @@
       "__id__": 2
     },
     "_children": [],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 6
@@ -680,11 +680,8 @@
     "node": {
       "__id__": 2
     },
-    "_enabled": false,
+    "_enabled": true,
     "__prefab": null,
-    "video_player": {
-      "__id__": 7
-    },
     "_id": "5cmfu52lxK3KGmeHw6PRLf"
   },
   {
