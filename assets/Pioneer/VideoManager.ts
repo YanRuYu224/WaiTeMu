@@ -4,6 +4,10 @@ const { ccclass, property } = _decorator;
 @ccclass('VideoManager')
 export class VideoManager {
 
+
+    playLocalVideo() {
+
+    }
 }
 
 

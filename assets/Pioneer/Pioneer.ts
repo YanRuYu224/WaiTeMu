@@ -17,17 +17,32 @@ export class Pioneer {
         return this._instance;
     }
 
+    // 管理器
     UIManager: UIManager;
     AudioManager: AudioManager;
     VideoManager: VideoManager;
     AssetManager: AssetManager;
 
+    // 游戏层级节点
+    Game: Node;
+    UI: Node;
+    Top: Node;
+
     init() {
-        console.log(`先行者被创建`);
+        this.initManager();
+    }
+
+    initManager() {
         this.UIManager = new UIManager();
         this.AudioManager = new AudioManager();
         this.VideoManager = new VideoManager();
         this.AssetManager = new AssetManager();
+    }
+
+    initLayer(node: Node) {
+        this.Game = node.getChildByName(`Game`);
+        this.UI = node.getChildByName(`UI`);
+        this.Top = node.getChildByName(`Top`);
     }
 }
 

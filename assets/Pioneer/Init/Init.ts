@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, VideoPlayer } from 'cc';
+import { _decorator, Component, director, Node, VideoPlayer } from 'cc';
 import { Pioneer } from '../Pioneer';
 const { ccclass, property } = _decorator;
 
@@ -7,6 +7,8 @@ export class Init extends Component {
 
     protected onLoad(): void {
         Pioneer.instance.init();
+
+        director.loadScene(`Main`);
     }
 
 
