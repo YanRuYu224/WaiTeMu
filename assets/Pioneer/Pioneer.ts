@@ -27,6 +27,8 @@ export class Pioneer {
     Game: Node;
     UI: Node;
     Top: Node;
+    Audio: Node;
+    Video: Node;
 
     init() {
         this.initManager();
@@ -43,6 +45,8 @@ export class Pioneer {
         this.Game = node.getChildByName(`Game`);
         this.UI = node.getChildByName(`UI`);
         this.Top = node.getChildByName(`Top`);
+        this.Audio = node.getChildByName(`Audio`);
+        this.Video = node.getChildByName(`Video`);
     }
 }
 
