@@ -12,8 +12,7 @@ export class Main extends Component {
         await Pioneer.instance.VideoManager.playLocalVideo({ clip: await Pioneer.instance.AssetManager.loadVideo("Art", "Video/开场动画") });
         await Pioneer.instance.VideoManager.playLocalVideo({ clip: await Pioneer.instance.AssetManager.loadVideo("Art", "Video/入场动画") });
         await Pioneer.instance.VideoManager.playLocalVideo({ clip: await Pioneer.instance.AssetManager.loadVideo("Art", "Video/人物背景说明") });
-        let node = instantiate(await Pioneer.instance.AssetManager.loadPrefab("Art", "Prefabs/BeforeDoorDialog"));
-        node.parent = Pioneer.instance.UI;
+        Pioneer.instance.UIManager.ShowUI("Prefabs/BeforeDoorDialog");
     }
 }
 

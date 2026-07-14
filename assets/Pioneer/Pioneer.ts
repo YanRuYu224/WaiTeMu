@@ -3,6 +3,8 @@ import { UIManager } from './UIManager';
 import { AudioManager } from './AudioManager';
 import { VideoManager } from './VideoManager';
 import { AssetManager } from './AssetManager';
+import { EventCenter } from './EventCenter';
+import { EventName } from './EventName';
 const { ccclass, property } = _decorator;
 
 @ccclass('Pioneer')
@@ -22,6 +24,8 @@ export class Pioneer {
     AudioManager: AudioManager;
     VideoManager: VideoManager;
     AssetManager: AssetManager;
+    EventCenter: EventCenter;
+    EventName: typeof EventName;
 
     // 游戏层级节点
     Game: Node;
@@ -39,6 +43,8 @@ export class Pioneer {
         this.AudioManager = new AudioManager();
         this.VideoManager = new VideoManager();
         this.AssetManager = new AssetManager();
+        this.EventCenter = EventCenter.instance;
+        this.EventName = EventName;
     }
 
     initLayer(node: Node) {

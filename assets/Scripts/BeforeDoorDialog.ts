@@ -18,31 +18,43 @@ export class BeforeDoorDialog extends Component {
     stage_two: Node = null;
 
     @property(Node)
-    left_node: Node = null;
-
-    @property(Node)
-    right_node: Node = null;
-
-    @property(Node)
-    left_back: Node = null;
-
-    @property(Node)
-    right_back: Node = null;
-
-    @property(Node)
     btn_left: Node = null;
 
     @property(Node)
     btn_right: Node = null;
 
-    protected onLoad(): void {
-        this.stage_one.on(Node.EventType.TOUCH_END, this.onClick, this);
-        this.btn_left.on(Node.EventType.TOUCH_END, this.onClickLeft, this);
-        this.btn_right.on(Node.EventType.TOUCH_END, this.onClickRight, this);
-        this.left_back.on(Node.EventType.TOUCH_END, this.onClickLeftBack, this);
-        this.right_back.on(Node.EventType.TOUCH_END, this.onClickRightBack, this);
+    @property(Node)
+    btn_middle: Node = null;
 
+    bag;
+
+    protected onLoad(): void {
+        this.stage_one.on(Node.EventType.MOUSE_UP, this.onClick, this);
+
+        this.btn_left.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_left), this);
+        this.btn_left.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_left), this);
+        this.btn_left.on(Node.EventType.MOUSE_UP, this.onClickLeft, this);
+
+        this.btn_middle.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_middle), this);
+        this.btn_middle.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_middle), this);
+        this.btn_middle.on(Node.EventType.MOUSE_UP, this.onClickMiddle, this);
+
+        this.btn_right.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_right), this);
+        this.btn_right.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_right), this);
+        this.btn_right.on(Node.EventType.MOUSE_UP, this.onClickRight, this);
+
+        this.stage_one.active = true;
         this.typeWrite(this.label, this.label_str);
+        Pioneer.instance.UIManager.ShowUI("Prefabs/Bag", Pioneer.instance.Top).then((node) => {
+            this.bag = node;
+            this.bag.active = false;
+        });
+
+        Pioneer.instance.EventCenter.on(Pioneer.instance.EventName.SET_BAG_STATE, this.setState, this);
+    }
+
+    setState(state) {
+        this.bag.active = state;
     }
 
     typeWrite(label: Label, content: string, interval: number = 0.05) {
@@ -83,24 +95,27 @@ export class BeforeDoorDialog extends Component {
         this.resetLabel();
     }
 
-    onClickLeft() {
-        this.stage_two.active = false;
-        this.left_node.active = true;
+    onEnterDoor(node: Node) {
+        node.children[0].active = true;
+    }
+
+    onLeaveDoor(node: Node) {
+        node.children[0].active = false;
     }
 
     onClickRight() {
-        this.stage_two.active = false;
-        this.right_node.active = true;
+        this.bag.active = true;
+        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorRight");
     }
 
-    onClickLeftBack() {
-        this.stage_two.active = true;
-        this.left_node.active = false;
+    onClickLeft() {
+        this.bag.active = true;
+        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorLeft");
     }
 
-    onClickRightBack() {
-        this.stage_two.active = true;
-        this.right_node.active = false;
+    onClickMiddle() {
+        this.bag.active = true;
+        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorMiddle");
     }
 }
 
