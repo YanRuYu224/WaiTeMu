@@ -1,18 +1,10 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Component } from 'cc';
+import { DoorLeft } from './DoorLeft';
 const { ccclass, property } = _decorator;
 
 @ccclass('DoorRight')
-export class DoorRight extends Component {
-    @property(Node)
-    back: Node = null;
+export class DoorRight extends DoorLeft {
 
-    protected onLoad(): void {
-        this.back.on(Node.EventType.MOUSE_UP, this.onClick, this);
-    }
-
-    onClick() {
-        this.node.destroy();
-    }
 
 }
 

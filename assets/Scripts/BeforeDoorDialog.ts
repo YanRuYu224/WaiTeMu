@@ -1,5 +1,5 @@
 import { _decorator, Component, Label, Node } from 'cc';
-import { Pioneer } from '../Pioneer/Pioneer';
+import { yy } from '../Pioneer/Pioneer';
 const { ccclass, property } = _decorator;
 
 @ccclass('BeforeDoorDialog')
@@ -29,28 +29,33 @@ export class BeforeDoorDialog extends Component {
     bag;
 
     protected onLoad(): void {
-        this.stage_one.on(Node.EventType.MOUSE_UP, this.onClick, this);
+        this.stage_one.on(Node.EventType.TOUCH_END, this.onClick, this);
 
         this.btn_left.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_left), this);
         this.btn_left.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_left), this);
-        this.btn_left.on(Node.EventType.MOUSE_UP, this.onClickLeft, this);
+        this.btn_left.on(Node.EventType.TOUCH_END, this.onClickLeft, this);
 
         this.btn_middle.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_middle), this);
         this.btn_middle.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_middle), this);
-        this.btn_middle.on(Node.EventType.MOUSE_UP, this.onClickMiddle, this);
+        this.btn_middle.on(Node.EventType.TOUCH_END, this.onClickMiddle, this);
 
         this.btn_right.on(Node.EventType.MOUSE_ENTER, this.onEnterDoor.bind(this, this.btn_right), this);
         this.btn_right.on(Node.EventType.MOUSE_LEAVE, this.onLeaveDoor.bind(this, this.btn_right), this);
-        this.btn_right.on(Node.EventType.MOUSE_UP, this.onClickRight, this);
+        this.btn_right.on(Node.EventType.TOUCH_END, this.onClickRight, this);
 
         this.stage_one.active = true;
         this.typeWrite(this.label, this.label_str);
-        Pioneer.instance.UIManager.ShowUI("Prefabs/Bag", Pioneer.instance.Top).then((node) => {
+        yy.Storage.clear();
+        yy.UIManager.ShowUI("Prefabs/Bag", yy.Top).then((node) => {
             this.bag = node;
             this.bag.active = false;
         });
 
-        Pioneer.instance.EventCenter.on(Pioneer.instance.EventName.SET_BAG_STATE, this.setState, this);
+        yy.EventCenter.on(yy.EventName.SET_BAG_STATE, this.setState, this);
+    }
+
+    protected onDestroy(): void {
+        yy.EventCenter.off(yy.EventName.SET_BAG_STATE, this.setState);
     }
 
     setState(state) {
@@ -90,7 +95,7 @@ export class BeforeDoorDialog extends Component {
     }
 
     async onClick() {
-        await Pioneer.instance.VideoManager.playLocalVideo({ clip: await Pioneer.instance.AssetManager.loadVideo("Art", "Video/开门动画") });
+        await yy.VideoManager.playLocalVideo({ clip: await yy.AssetManager.loadVideo("Art", "Video/开门动画") });
         this.stage_one.destroy();
         this.resetLabel();
     }
@@ -105,17 +110,17 @@ export class BeforeDoorDialog extends Component {
 
     onClickRight() {
         this.bag.active = true;
-        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorRight");
+        yy.UIManager.ShowUI("Prefabs/DoorRight");
     }
 
     onClickLeft() {
         this.bag.active = true;
-        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorLeft");
+        yy.UIManager.ShowUI("Prefabs/DoorLeft");
     }
 
     onClickMiddle() {
         this.bag.active = true;
-        Pioneer.instance.UIManager.ShowUI("Prefabs/DoorMiddle");
+        yy.UIManager.ShowUI("Prefabs/DoorMiddle");
     }
 }
 

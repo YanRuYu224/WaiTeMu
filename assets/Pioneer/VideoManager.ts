@@ -1,6 +1,5 @@
-import { _decorator, Component, Node, Enum } from 'cc';
-import { Pioneer } from './Pioneer';
-import { VideoPlayer } from 'cc';
+import { _decorator, Enum, Node, VideoPlayer } from 'cc';
+import { yy } from './Pioneer';
 const { ccclass, property } = _decorator;
 
 const ResourceType = Enum({
@@ -24,12 +23,12 @@ export class VideoManager {
 
     async playLocalVideo({ clip, rate = 1, volume = 1, mute = false, loop = false, keepRatio = false, full = true }): Promise<void> {
         return new Promise((resolve) => {
-            Pioneer.instance.Video.children.forEach((node) => {
+            yy.Video.children.forEach((node) => {
                 node.destroy();
             });
 
             let node = new Node();
-            node.parent = Pioneer.instance.Video;
+            node.parent = yy.Video;
             let videoPlayer = node.addComponent(VideoPlayer);
             videoPlayer.resourceType = ResourceType.LOCAL;
             videoPlayer.clip = clip;

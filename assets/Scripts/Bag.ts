@@ -1,9 +1,6 @@
-import { Vec3 } from 'cc';
-import { tween } from 'cc';
-import { _decorator, Component, Node } from 'cc';
-import { Pioneer } from '../Pioneer/Pioneer';
-import { Sprite } from 'cc';
-import { SpriteFrame } from 'cc';
+import { _decorator, Component, Node, Sprite, SpriteFrame, tween, Vec3 } from 'cc';
+import { yy } from '../Pioneer/Pioneer';
+import { BagItem } from './BagItem';
 const { ccclass, property } = _decorator;
 
 @ccclass('Bag')
@@ -15,30 +12,50 @@ export class Bag extends Component {
     @property(SpriteFrame)
     sprite_frames: SpriteFrame[] = [];
 
-    protected onLoad(): void {
-        this.node.on(Node.EventType.MOUSE_UP, this.onClickBag, this);
+    @property(Node)
+    bag_close: Node = null;
 
-        Pioneer.instance.EventCenter.on(Pioneer.instance.EventName.GIVE_BAG_ITEM, this.onGiveBagItem, this);
+    protected onLoad(): void {
+        this.node.on(Node.EventType.TOUCH_END, this.onClickOpen, this);
+        this.bag_close.on(Node.EventType.TOUCH_END, this.onClickClsoe, this);
+
+        yy.EventCenter.on(yy.EventName.GIVE_BAG_ITEM, this.onGiveBagItem, this);
+
+        this.getBagItem();
     }
 
-    onClickBag() {
-        if (this.node.children[0].position.y === 0) {
-            tween(this.node.children[0])
-                .to(0.2, { position: new Vec3(0, 2000) })
-                .start();
-        } else {
-            tween(this.node.children[0])
-                .to(0.2, { position: new Vec3(0, 0) })
-                .start();
+    protected onDestroy(): void {
+        yy.EventCenter.off(yy.EventName.GIVE_BAG_ITEM, this.onGiveBagItem);
+    }
+
+    onClickOpen() {
+        tween(this.node.children[0])
+            .to(0.2, { position: new Vec3(0, 0) })
+            .start();
+    }
+
+    onClickClsoe() {
+        tween(this.node.children[0])
+            .to(0.2, { position: new Vec3(0, 2000) })
+            .start();
+    }
+
+    getBagItem() {
+        let itemArr = yy.Storage.getObject(yy.StorageName.USER_BAG_ITEM, []);
+        for (let i = 0; i < this.content.children.length; ++i) {
+            if (itemArr[i]) {
+                this.content.children[i].getComponent(BagItem).init(itemArr[i]);
+            }
         }
     }
 
     onGiveBagItem(index) {
         for (let i = 0; i < this.content.children.length; ++i) {
-            if (this.content.children[i].children[0].getComponent(Sprite).spriteFrame) {
+            let comp = this.content.children[i].getComponent(BagItem);
+            if (comp.index !== -1) {
                 continue;
             } else {
-                this.content.children[i].children[0].getComponent(Sprite).spriteFrame = this.sprite_frames[index];
+                comp.init(index);
                 break;
             }
         }

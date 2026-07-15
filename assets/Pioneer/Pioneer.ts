@@ -1,14 +1,20 @@
-import { _decorator, Component, Node } from 'cc';
-import { UIManager } from './UIManager';
-import { AudioManager } from './AudioManager';
-import { VideoManager } from './VideoManager';
+import { _decorator, Node } from 'cc';
 import { AssetManager } from './AssetManager';
+import { AudioManager } from './AudioManager';
 import { EventCenter } from './EventCenter';
 import { EventName } from './EventName';
+import { LocalStorageManager } from './LocalStorageManager';
+import { StorageName } from './StorageName';
+import { UIManager } from './UIManager';
+import { VideoManager } from './VideoManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('Pioneer')
 export class Pioneer {
+
+    private constructor() {
+        this.init();
+    }
 
     private static _instance: Pioneer;
 
@@ -26,6 +32,8 @@ export class Pioneer {
     AssetManager: AssetManager;
     EventCenter: EventCenter;
     EventName: typeof EventName;
+    Storage: LocalStorageManager;
+    StorageName: typeof StorageName;
 
     // 游戏层级节点
     Game: Node;
@@ -34,17 +42,19 @@ export class Pioneer {
     Audio: Node;
     Video: Node;
 
-    init() {
+    private init() {
         this.initManager();
     }
 
-    initManager() {
+    private initManager() {
         this.UIManager = new UIManager();
         this.AudioManager = new AudioManager();
         this.VideoManager = new VideoManager();
         this.AssetManager = new AssetManager();
         this.EventCenter = EventCenter.instance;
         this.EventName = EventName;
+        this.Storage = LocalStorageManager.instance;
+        this.StorageName = StorageName;
     }
 
     initLayer(node: Node) {
@@ -55,5 +65,8 @@ export class Pioneer {
         this.Video = node.getChildByName(`Video`);
     }
 }
+
+export const yy = Pioneer.instance;
+if (!window["yy"]) window["yy"] = yy;
 
 
