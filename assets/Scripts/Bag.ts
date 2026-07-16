@@ -31,6 +31,7 @@ export class Bag extends Component {
     }
 
     onClickOpen() {
+        if (this.node.children[0].position.y === 0) return;
         tween(this.node.children[0])
             .to(0.2, { position: new Vec3(0, 0) })
             .start();
@@ -56,6 +57,7 @@ export class Bag extends Component {
     }
 
     onGiveBagItem(index) {
+        this.onClickOpen();
         for (let i = 0; i < this.content.children.length; ++i) {
             let comp = this.content.children[i].getComponent(BagItem);
             if (comp.index !== -1) {
