@@ -23,13 +23,7 @@ export class VideoManager {
 
     async playLocalVideo({ clip, rate = 1, volume = 1, mute = false, loop = false, keepRatio = false, full = true }): Promise<void> {
         return new Promise((resolve) => {
-            yy.Video.children.forEach((node) => {
-                node.destroy();
-            });
-
-            let node = new Node();
-            node.parent = yy.Video;
-            let videoPlayer = node.addComponent(VideoPlayer);
+            let videoPlayer = yy.Video.getComponent(VideoPlayer);
             videoPlayer.resourceType = ResourceType.LOCAL;
             videoPlayer.clip = clip;
             videoPlayer.playbackRate = rate;
@@ -40,13 +34,12 @@ export class VideoManager {
             videoPlayer.fullScreenOnAwake = full;
 
             videoPlayer.node.on(VideoPlayer.EventType.COMPLETED, () => {
-
-                node.destroy();
-
+                videoPlayer.clip = null;
+                yy.EventCenter.emit(yy.EventName.HIDE_GLOBAL_MASK);
                 resolve();
-
             }, this);
 
+            yy.EventCenter.emit(yy.EventName.SHOW_GLOBAL_MASK);
             videoPlayer.play();
         })
     }

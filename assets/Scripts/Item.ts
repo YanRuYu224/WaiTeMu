@@ -3,11 +3,11 @@ import { yy } from '../Pioneer/Pioneer';
 const { ccclass, property } = _decorator;
 
 enum ItemType {
-    Globe = 0,
-    Celestial = 1,
-    Astronomy = 2,
-    Telescope = 3,
-    Messenger = 4,
+    Globe = 0,//地球仪
+    Celestial = 1,//天体论
+    Astronomy = 2,//天文对话
+    Telescope = 3,//望远镜
+    Messenger = 4,//星界使者
 }
 
 @ccclass('Item')

@@ -1,5 +1,4 @@
-import { _decorator, Component, Node, Sprite, SpriteFrame, Animation } from 'cc';
-import { playAniSync } from '../Pioneer/Utils';
+import { _decorator, Collider2D, Component, Contact2DType, Node, Sprite, SpriteFrame, UITransform, Vec3 } from 'cc';
 import { yy } from '../Pioneer/Pioneer';
 const { ccclass, property } = _decorator;
 
@@ -21,20 +20,25 @@ export class BagItem extends Component {
     index = -1;
 
     protected onLoad(): void {
-        this.item_sprite.node.on(Node.EventType.TOUCH_END, this.onClickSprite, this);
+        this.item_sprite.node.on(Node.EventType.TOUCH_END, this.onTounchEnd, this);
         this.item_sprite.node.on(Node.EventType.MOUSE_ENTER, this.onEnterItem, this);
         this.item_sprite.node.on(Node.EventType.MOUSE_LEAVE, this.onLeaveItem, this);
 
-        yy.UIManager.ShowUI("Prefabs/BagItemText", yy.Top);
         this.light_sprite.node.active = false;
+
+        yy.EventCenter.on(yy.EventName.SET_BAG_ITEM_MOVE_STATE, this.setMoveState, this);
     }
 
     protected onDestroy(): void {
-        this.item_sprite.node.off(Node.EventType.TOUCH_END, this.onClickSprite, this);
+        yy.EventCenter.off(yy.EventName.SET_BAG_ITEM_MOVE_STATE, this.setMoveState);
     }
 
-    onClickSprite() {
-        this.index !== -1 && yy.EventCenter.emit(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.index);
+    onTounchEnd() {
+        if (!this.canMove) {
+            this.index !== -1 && yy.EventCenter.emit(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.index);
+        } else {
+            this.index !== -1 && yy.EventCenter.emit(yy.EventName.COLLECTION_ITEM_TO_DESK, this.index, this.item_sprite.node);
+        }
     }
 
     init(index) {
@@ -51,6 +55,11 @@ export class BagItem extends Component {
 
     onLeaveItem() {
         this.light_sprite.node.active = false;
+    }
+
+    private canMove = false;
+    setMoveState(boo) {
+        this.canMove = boo;
     }
 }
 

@@ -804,6 +804,7 @@
     "light_sprite": {
       "__id__": 6
     },
+    "collider": null,
     "_id": ""
   },
   {

@@ -9,9 +9,10 @@ export class Main extends Component {
     }
 
     protected async start(): Promise<void> {
-        await yy.VideoManager.playLocalVideo({ clip: await yy.AssetManager.loadVideo("Art", "Video/开场动画") });
-        await yy.VideoManager.playLocalVideo({ clip: await yy.AssetManager.loadVideo("Art", "Video/入场动画") });
-        await yy.VideoManager.playLocalVideo({ clip: await yy.AssetManager.loadVideo("Art", "Video/人物背景说明") });
+        let clips = [await yy.AssetManager.loadVideo("Art", "Video/开场动画"), await yy.AssetManager.loadVideo("Art", "Video/入场动画"), await yy.AssetManager.loadVideo("Art", "Video/人物背景说明")];
+        for (let i = 0; i < clips.length; ++i) {
+            await yy.VideoManager.playLocalVideo({ clip: clips[i] });
+        }
         yy.UIManager.ShowUI("Prefabs/BeforeDoorDialog");
     }
 }

@@ -18,13 +18,15 @@ export class Bag extends Component {
     protected onLoad(): void {
         this.node.on(Node.EventType.TOUCH_END, this.onClickOpen, this);
         this.bag_close.on(Node.EventType.TOUCH_END, this.onClickClsoe, this);
-
+        yy.EventCenter.on(yy.EventName.SET_BAG_STATE, this.setState, this);
         yy.EventCenter.on(yy.EventName.GIVE_BAG_ITEM, this.onGiveBagItem, this);
-
+        yy.EventCenter.on(yy.EventName.DESTROY_BAG, () => { this.node.destroy(); }, this);
         this.getBagItem();
+        yy.UIManager.ShowUI("Prefabs/BagItemText", yy.Top);
     }
 
     protected onDestroy(): void {
+        yy.EventCenter.off(yy.EventName.SET_BAG_STATE, this.setState);
         yy.EventCenter.off(yy.EventName.GIVE_BAG_ITEM, this.onGiveBagItem);
     }
 
@@ -47,6 +49,10 @@ export class Bag extends Component {
                 this.content.children[i].getComponent(BagItem).init(itemArr[i]);
             }
         }
+    }
+
+    setState(state) {
+        this.node && (this.node.active = state);
     }
 
     onGiveBagItem(index) {

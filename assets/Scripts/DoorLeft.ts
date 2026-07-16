@@ -13,7 +13,7 @@ export class DoorLeft extends Component {
 
     onClick() {
         yy.EventCenter.emit(yy.EventName.SET_BAG_STATE, false);
-        this.node.destroy();
+        this.node.active = false;
     }
 
 }
