@@ -33,7 +33,7 @@ export class VideoManager {
             videoPlayer.keepAspectRatio = keepRatio;
             videoPlayer.fullScreenOnAwake = full;
 
-            videoPlayer.node.on(VideoPlayer.EventType.COMPLETED, () => {
+            videoPlayer.node.once(VideoPlayer.EventType.COMPLETED, () => {
                 videoPlayer.clip = null;
                 yy.EventCenter.emit(yy.EventName.HIDE_GLOBAL_MASK);
                 resolve();
