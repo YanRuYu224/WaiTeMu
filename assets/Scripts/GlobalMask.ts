@@ -7,13 +7,12 @@ export class GlobalMask extends Component {
     protected onLoad(): void {
         this.node.active = false;
 
-        yy.EventCenter.on(yy.EventName.SHOW_GLOBAL_MASK, this.show, this);
-        yy.EventCenter.on(yy.EventName.HIDE_GLOBAL_MASK, this.hide, this);
+        yy.EventCenter.addEventListener(yy.EventName.SHOW_GLOBAL_MASK, this.show, this);
+        yy.EventCenter.addEventListener(yy.EventName.HIDE_GLOBAL_MASK, this.hide, this);
     }
 
     protected onDestroy(): void {
-        yy.EventCenter.off(yy.EventName.SHOW_GLOBAL_MASK, this.show);
-        yy.EventCenter.off(yy.EventName.HIDE_GLOBAL_MASK, this.hide);
+        yy.EventCenter.removeTargetListeners(this);
     }
 
     show() {

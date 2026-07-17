@@ -15,11 +15,11 @@ export class BagItemText extends Component {
     des_ani: Animation = null;
 
     protected onLoad(): void {
-        yy.EventCenter.on(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.playAni, this);
+        yy.EventCenter.addEventListener(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.playAni, this);
     }
 
     protected onDestroy(): void {
-        yy.EventCenter.off(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.playAni);
+        yy.EventCenter.removeTargetListeners(this);
     }
 
     isPlay = false;

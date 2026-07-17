@@ -30,7 +30,7 @@ export class DoorMainDialog extends Component {
         this.door_right.on(Node.EventType.TOUCH_END, this.onClickRight, this);
 
         yy.UIManager.ShowUI("Prefabs/Bag", yy.Top).then((node) => {
-            yy.EventCenter.emit(yy.EventName.SET_BAG_STATE, false);
+            yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_STATE, false);
         });
 
         // yy.UIManager.ShowUI("Prefabs/NoteBook", yy.Top);
@@ -45,17 +45,17 @@ export class DoorMainDialog extends Component {
     }
 
     onClickRight() {
-        yy.EventCenter.emit(yy.EventName.SET_BAG_STATE, true);
+        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_STATE, true);
         yy.UIManager.ShowUI("Prefabs/DoorRight");
     }
 
     onClickLeft() {
-        yy.EventCenter.emit(yy.EventName.SET_BAG_STATE, true);
+        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_STATE, true);
         yy.UIManager.ShowUI("Prefabs/DoorLeft");
     }
 
     onClickMiddle() {
-        yy.EventCenter.emit(yy.EventName.SET_BAG_STATE, true);
+        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_STATE, true);
         yy.UIManager.ShowUI("Prefabs/DoorMiddle");
     }
 }

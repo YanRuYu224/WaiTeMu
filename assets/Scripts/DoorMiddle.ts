@@ -15,15 +15,19 @@ export class DoorMiddle extends DoorLeft {
 
     protected onLoad(): void {
         super.onLoad();
-        yy.EventCenter.on(yy.EventName.COLLECTION_ITEM_TO_DESK, this.updateItem, this);
+        yy.EventCenter.addEventListener(yy.EventName.COLLECTION_ITEM_TO_DESK, this.updateItem, this);
+    }
+
+    protected onDestroy(): void {
+        yy.EventCenter.removeTargetListeners(this);
     }
 
     protected onEnable(): void {
-        yy.EventCenter.emit(yy.EventName.SET_BAG_ITEM_MOVE_STATE, true);
+        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_ITEM_MOVE_STATE, true);
     }
 
     protected onDisable(): void {
-        yy.EventCenter.emit(yy.EventName.SET_BAG_ITEM_MOVE_STATE, false);
+        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_ITEM_MOVE_STATE, false);
     }
 
     updateItem(index, node: Node) {
@@ -43,7 +47,7 @@ export class DoorMiddle extends DoorLeft {
         if (finish) {
             this.type_write.textContent = 'これで大丈夫でしょう';
             await this.type_write.start();
-            yy.EventCenter.emit(yy.EventName.DESTROY_BAG);
+            yy.EventCenter.dispatchEvent(yy.EventName.DESTROY_BAG);
             yy.UIManager.ShowUI("Prefabs/NoteBook", yy.Top);
         }
     }

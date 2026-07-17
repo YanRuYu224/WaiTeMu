@@ -26,18 +26,18 @@ export class BagItem extends Component {
 
         this.light_sprite.node.active = false;
 
-        yy.EventCenter.on(yy.EventName.SET_BAG_ITEM_MOVE_STATE, this.setMoveState, this);
+        yy.EventCenter.addEventListener(yy.EventName.SET_BAG_ITEM_MOVE_STATE, this.setMoveState, this);
     }
 
     protected onDestroy(): void {
-        yy.EventCenter.off(yy.EventName.SET_BAG_ITEM_MOVE_STATE, this.setMoveState);
+        yy.EventCenter.removeTargetListeners(this);
     }
 
     onTounchEnd() {
         if (!this.canMove) {
-            this.index !== -1 && yy.EventCenter.emit(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.index);
+            this.index !== -1 && yy.EventCenter.dispatchEvent(yy.EventName.SHOW_ITEM_ANIMATION_DES, this.index);
         } else {
-            this.index !== -1 && yy.EventCenter.emit(yy.EventName.COLLECTION_ITEM_TO_DESK, this.index, this.item_sprite.node);
+            this.index !== -1 && yy.EventCenter.dispatchEvent(yy.EventName.COLLECTION_ITEM_TO_DESK, this.index, this.item_sprite.node);
         }
     }
 

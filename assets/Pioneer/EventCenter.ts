@@ -2,10 +2,15 @@
 
 type EventCallback = (...args: any[]) => void;
 
+interface EventListener {
+    callback: EventCallback;
+    target?: any;
+}
+
 export class EventCenter {
     private static _instance: EventCenter;
 
-    private events: Map<string, EventCallback[]> = new Map();
+    private events: Map<string, EventListener[]> = new Map();
 
     private constructor() { }
 
@@ -19,30 +24,34 @@ export class EventCenter {
     /**
      * 注册事件
      */
-    public on(eventName: string, callback: EventCallback, target?: any) {
+    public addEventListener(eventName: string, callback: EventCallback, target?: any) {
         if (!this.events.has(eventName)) {
             this.events.set(eventName, []);
         }
 
-        const callbacks = this.events.get(eventName)!;
+        const listeners = this.events.get(eventName)!;
 
         // 防止重复注册
-        const handler = target ? callback.bind(target) : callback;
+        const exists = listeners.some(listener => {
+            return listener.callback === callback && listener.target === target;
+        });
 
-        callbacks.push(handler);
+        if (!exists) {
+            listeners.push({ callback, target });
+        }
     }
 
 
     /**
      * 派发事件
      */
-    public emit(eventName: string, ...args: any[]) {
-        const callbacks = this.events.get(eventName);
+    public dispatchEvent(eventName: string, ...args: any[]) {
+        const listeners = this.events.get(eventName);
 
-        if (!callbacks) return;
+        if (!listeners) return;
 
-        callbacks.forEach(callback => {
-            callback(...args);
+        [...listeners].forEach(listener => {
+            listener.callback.apply(listener.target, args);
         });
     }
 
@@ -50,7 +59,7 @@ export class EventCenter {
     /**
      * 移除事件
      */
-    public off(eventName: string, callback?: EventCallback) {
+    public removeEventListener(eventName: string, callback?: EventCallback, target?: any) {
 
         if (!this.events.has(eventName)) return;
 
@@ -60,17 +69,34 @@ export class EventCenter {
             return;
         }
 
-        const callbacks = this.events.get(eventName)!;
+        const listeners = this.events.get(eventName)!;
+        const remaining = listeners.filter(listener => {
+            if (listener.callback !== callback) return true;
+            return target !== undefined && listener.target !== target;
+        });
 
-        const index = callbacks.indexOf(callback);
-
-        if (index !== -1) {
-            callbacks.splice(index, 1);
-        }
-
-        if (callbacks.length === 0) {
+        if (remaining.length === 0) {
             this.events.delete(eventName);
+        } else {
+            this.events.set(eventName, remaining);
         }
+    }
+
+    /**
+     * 移除指定目标注册的所有事件
+     */
+    public removeTargetListeners(target: any) {
+        if (target === null || target === undefined) return;
+
+        this.events.forEach((listeners, eventName) => {
+            const remaining = listeners.filter(listener => listener.target !== target);
+
+            if (remaining.length === 0) {
+                this.events.delete(eventName);
+            } else if (remaining.length !== listeners.length) {
+                this.events.set(eventName, remaining);
+            }
+        });
     }
 
 

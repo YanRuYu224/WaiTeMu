@@ -13,9 +13,9 @@ export class NoteBook extends Component {
     }
 
     protected async start() {
-        yy.EventCenter.emit(yy.EventName.SHOW_GLOBAL_MASK);
+        yy.EventCenter.dispatchEvent(yy.EventName.SHOW_GLOBAL_MASK);
         await playAniSync(this.ani);
-        yy.EventCenter.emit(yy.EventName.HIDE_GLOBAL_MASK);
+        yy.EventCenter.dispatchEvent(yy.EventName.HIDE_GLOBAL_MASK);
     }
 
     private isMove = false;

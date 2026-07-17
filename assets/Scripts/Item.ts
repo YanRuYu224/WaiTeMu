@@ -37,7 +37,7 @@ export class Item extends Component {
         let arr = yy.Storage.getObject(yy.StorageName.USER_BAG_ITEM, []);
         arr.push(this.item_type);
         yy.Storage.setObject(yy.StorageName.USER_BAG_ITEM, arr);
-        yy.EventCenter.emit(yy.EventName.GIVE_BAG_ITEM, this.item_type);
+        yy.EventCenter.dispatchEvent(yy.EventName.GIVE_BAG_ITEM, this.item_type);
         this.node.active = false;
     }
 }

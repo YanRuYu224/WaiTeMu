@@ -35,11 +35,11 @@ export class VideoManager {
 
             videoPlayer.node.once(VideoPlayer.EventType.COMPLETED, () => {
                 videoPlayer.clip = null;
-                yy.EventCenter.emit(yy.EventName.HIDE_GLOBAL_MASK);
+                yy.EventCenter.dispatchEvent(yy.EventName.HIDE_GLOBAL_MASK);
                 resolve();
             }, this);
 
-            yy.EventCenter.emit(yy.EventName.SHOW_GLOBAL_MASK);
+            yy.EventCenter.dispatchEvent(yy.EventName.SHOW_GLOBAL_MASK);
             videoPlayer.play();
         })
     }
