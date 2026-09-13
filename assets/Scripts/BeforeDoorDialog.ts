@@ -5,6 +5,8 @@ const { ccclass, property } = _decorator;
 @ccclass('BeforeDoorDialog')
 export class BeforeDoorDialog extends Component {
 
+    private opening = false;
+
     @property(Node)
     door: Node = null;
 
@@ -14,6 +16,9 @@ export class BeforeDoorDialog extends Component {
     }
 
     async onClick() {
+        if (this.opening) return;
+        this.opening = true;
+
         await yy.VideoManager.playLocalVideo({ clip: await yy.AssetManager.loadVideo("Art", "Video/开门动画") });
         this.node.destroy();
         await yy.UIManager.ShowUI("Prefabs/DoorMainDialog", yy.UI);

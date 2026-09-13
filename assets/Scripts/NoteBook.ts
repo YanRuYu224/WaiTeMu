@@ -16,6 +16,7 @@ export class NoteBook extends Component {
         yy.EventCenter.dispatchEvent(yy.EventName.SHOW_GLOBAL_MASK);
         await playAniSync(this.ani);
         yy.EventCenter.dispatchEvent(yy.EventName.HIDE_GLOBAL_MASK);
+        yy.EventCenter.dispatchEvent(yy.EventName.NOTEBOOK_READY);
     }
 
     private isMove = false;
@@ -23,7 +24,7 @@ export class NoteBook extends Component {
         if (this.isMove) return;
 
         this.isMove = true;
-        let pos = this.node.position.x === 0 ? new Vec3(1200, 0, 0) : new Vec3(0, 0, 0);
+        let pos = this.node.position.x === 0 ? new Vec3(1500, 0, 0) : new Vec3(0, 0, 0);
         tween(this.node)
             .to(1, { position: pos })
             .call(() => {

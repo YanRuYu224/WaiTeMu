@@ -6,6 +6,8 @@ const { ccclass, property } = _decorator;
 @ccclass('Bag')
 export class Bag extends Component {
 
+    private destroying = false;
+
     @property(Node)
     content: Node = null;
 
@@ -20,13 +22,21 @@ export class Bag extends Component {
         this.bag_close.on(Node.EventType.TOUCH_END, this.onClickClsoe, this);
         yy.EventCenter.addEventListener(yy.EventName.SET_BAG_STATE, this.setState, this);
         yy.EventCenter.addEventListener(yy.EventName.GIVE_BAG_ITEM, this.onGiveBagItem, this);
-        yy.EventCenter.addEventListener(yy.EventName.DESTROY_BAG, () => { this.node.destroy(); }, this);
+        yy.EventCenter.addEventListener(yy.EventName.DESTROY_BAG, this.destroyBag, this);
         this.getBagItem();
         yy.UIManager.ShowUI("Prefabs/BagItemText", yy.Top);
     }
 
     protected onDestroy(): void {
+        this.destroying = true;
         yy.EventCenter.removeTargetListeners(this);
+    }
+
+    private destroyBag() {
+        if (this.destroying) return;
+
+        this.destroying = true;
+        this.node.destroy();
     }
 
     onClickOpen() {
@@ -52,7 +62,7 @@ export class Bag extends Component {
     }
 
     setState(state) {
-        this.node && (this.node.active = state);
+        if (!this.destroying) this.node.active = state;
     }
 
     onGiveBagItem(index) {
