@@ -60,7 +60,7 @@ export class DoorMiddle extends DoorLeft {
 
         this.moving_item_indices.add(index);
         tween(node)
-            .to(1, { worldPosition: deskItem.worldPosition })
+            .to(0.5, { worldPosition: deskItem.worldPosition })
             .call(() => {
                 deskItem.children[0].active = false;
                 node.parent.active = false;
@@ -81,6 +81,7 @@ export class DoorMiddle extends DoorLeft {
         this.collection_finished = true;
         this.type_write.textContent = 'これで大丈夫でしょう';
         await this.type_write.start();
+        this.type_write.getComponent(Label).string = '';
         yy.EventCenter.dispatchEvent(yy.EventName.DESTROY_BAG);
         this.notebook = await yy.UIManager.ShowUI("Prefabs/NoteBook", yy.Top);
     }
