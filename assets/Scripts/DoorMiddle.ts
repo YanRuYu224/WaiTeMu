@@ -26,6 +26,12 @@ export class DoorMiddle extends DoorLeft {
     private celestial_dragging = false;
     private celestial_drag_enabled = false;
     private celestial_flow_started = false;
+    private messenger_item: Node = null;
+    private messenger_start_position: Vec3 = new Vec3();
+    private messenger_drag_offset: Vec3 = new Vec3();
+    private messenger_dragging = false;
+    private messenger_drag_enabled = false;
+    private messenger_placed = false;
     private notebook: Node = null;
     private collection_finished = false;
     private moving_item_indices: Set<number> = new Set();
@@ -34,11 +40,13 @@ export class DoorMiddle extends DoorLeft {
         super.onLoad();
         yy.EventCenter.addEventListener(yy.EventName.COLLECTION_ITEM_TO_DESK, this.updateItem, this);
         yy.EventCenter.addEventListener(yy.EventName.NOTEBOOK_READY, this.enableCelestialDrag, this);
+        yy.EventCenter.addEventListener(yy.EventName.RETURN_TO_DESK_AFTER_ARISTOTLE, this.returnFromAristotle, this);
     }
 
     protected onDestroy(): void {
         yy.EventCenter.removeTargetListeners(this);
         this.disableCelestialDrag();
+        this.disableMessengerDrag();
     }
 
     protected onEnable(): void {
@@ -113,7 +121,7 @@ export class DoorMiddle extends DoorLeft {
     }
 
     private onCelestialTouchStart(event: EventTouch) {
-        const touchPosition = this.getTouchPositionInDesk(event);
+        const touchPosition = this.getTouchPositionInDesk(event, this.celestial_item);
         if (!touchPosition) return;
 
         this.celestial_dragging = true;
@@ -128,7 +136,7 @@ export class DoorMiddle extends DoorLeft {
     private onCelestialTouchMove(event: EventTouch) {
         if (!this.celestial_dragging) return;
 
-        const touchPosition = this.getTouchPositionInDesk(event);
+        const touchPosition = this.getTouchPositionInDesk(event, this.celestial_item);
         if (!touchPosition) return;
 
         this.celestial_item.setPosition(
@@ -176,12 +184,115 @@ export class DoorMiddle extends DoorLeft {
             .start();
     }
 
-    private getTouchPositionInDesk(event: EventTouch): Vec3 | null {
-        const deskTransform = this.celestial_item?.parent?.getComponent(UITransform);
+    private getTouchPositionInDesk(event: EventTouch, item: Node): Vec3 | null {
+        const deskTransform = item?.parent?.getComponent(UITransform);
         if (!deskTransform) return null;
 
         const location = event.getUILocation();
         return deskTransform.convertToNodeSpaceAR(new Vec3(location.x, location.y, 0));
+    }
+
+    private returnFromAristotle(): void {
+        if (!this.celestial_flow_started || !this.node.isValid) return;
+
+        this.disableCelestialDrag();
+        const celestial = this.celestial_item || this.desk_item[1];
+        if (celestial && celestial.isValid) celestial.active = false;
+        this.type_write.getComponent(Label).string = '';
+        this.node.active = true;
+        this.enableMessengerDrag();
+        yy.EventCenter.removeEventListener(
+            yy.EventName.RETURN_TO_DESK_AFTER_ARISTOTLE, this.returnFromAristotle, this,
+        );
+    }
+
+    private enableMessengerDrag(): void {
+        if (this.messenger_drag_enabled || this.messenger_placed) return;
+
+        // desk_item 的下标与物品编号一致，4 对应星界の使者。
+        this.messenger_item = this.desk_item[4];
+        if (!this.messenger_item || !this.messenger_item.isValid) return;
+
+        this.messenger_start_position.set(this.messenger_item.position);
+        this.messenger_item.on(Node.EventType.TOUCH_START, this.onMessengerTouchStart, this);
+        this.messenger_item.on(Node.EventType.TOUCH_MOVE, this.onMessengerTouchMove, this);
+        this.messenger_item.on(Node.EventType.TOUCH_END, this.onMessengerTouchEnd, this);
+        this.messenger_item.on(Node.EventType.TOUCH_CANCEL, this.onMessengerTouchCancel, this);
+        this.messenger_drag_enabled = true;
+    }
+
+    private disableMessengerDrag(): void {
+        if (!this.messenger_item) return;
+
+        this.messenger_item.off(Node.EventType.TOUCH_START, this.onMessengerTouchStart, this);
+        this.messenger_item.off(Node.EventType.TOUCH_MOVE, this.onMessengerTouchMove, this);
+        this.messenger_item.off(Node.EventType.TOUCH_END, this.onMessengerTouchEnd, this);
+        this.messenger_item.off(Node.EventType.TOUCH_CANCEL, this.onMessengerTouchCancel, this);
+        this.messenger_drag_enabled = false;
+        this.messenger_dragging = false;
+    }
+
+    private onMessengerTouchStart(event: EventTouch): void {
+        const touchPosition = this.getTouchPositionInDesk(event, this.messenger_item);
+        if (!touchPosition) return;
+
+        this.messenger_dragging = true;
+        this.messenger_drag_offset.set(
+            touchPosition.x - this.messenger_item.position.x,
+            touchPosition.y - this.messenger_item.position.y,
+            0,
+        );
+        event.propagationStopped = true;
+    }
+
+    private onMessengerTouchMove(event: EventTouch): void {
+        if (!this.messenger_dragging) return;
+
+        const touchPosition = this.getTouchPositionInDesk(event, this.messenger_item);
+        if (!touchPosition) return;
+
+        this.messenger_item.setPosition(
+            touchPosition.x - this.messenger_drag_offset.x,
+            touchPosition.y - this.messenger_drag_offset.y,
+            this.messenger_item.position.z,
+        );
+        event.propagationStopped = true;
+    }
+
+    private onMessengerTouchEnd(event: EventTouch): void {
+        if (!this.messenger_dragging) return;
+
+        this.messenger_dragging = false;
+        event.propagationStopped = true;
+
+        const position = this.messenger_item.position;
+        const offsetX = position.x - this.celestial_drop_position.x;
+        const offsetY = position.y - this.celestial_drop_position.y;
+        const isInDropArea = offsetX * offsetX + offsetY * offsetY
+            <= this.celestial_drop_radius * this.celestial_drop_radius;
+
+        if (isInDropArea) {
+            this.messenger_placed = true;
+            this.disableMessengerDrag();
+        }
+
+        tween(this.messenger_item)
+            .to(0.2, {
+                position: (isInDropArea
+                    ? this.celestial_drop_position
+                    : this.messenger_start_position).clone(),
+            })
+            .start();
+    }
+
+    private onMessengerTouchCancel(event: EventTouch): void {
+        if (!this.messenger_dragging) return;
+
+        this.messenger_dragging = false;
+        event.propagationStopped = true;
+        tween(this.messenger_item)
+            .to(0.2, { position: this.messenger_start_position.clone() })
+            .start();
     }
 
     private async startQuestionCollectionFlow() {
@@ -214,9 +325,9 @@ export class DoorMiddle extends DoorLeft {
         }
         await questionCollectionView.playEntrance();
 
-        // 桌面节点此前已被停用。不要在视频完成回调尚未退栈时销毁它，
-        // 只解绑全局事件，节点随场景正常释放即可。
-        yy.EventCenter.removeTargetListeners(this);
+        // 桌面节点仍要接收问答完成事件；收集阶段的事件此时已不再需要。
+        yy.EventCenter.removeEventListener(yy.EventName.COLLECTION_ITEM_TO_DESK, this.updateItem, this);
+        yy.EventCenter.removeEventListener(yy.EventName.NOTEBOOK_READY, this.enableCelestialDrag, this);
     }
 
 }

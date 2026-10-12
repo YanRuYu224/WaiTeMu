@@ -2,6 +2,7 @@ import {
     _decorator, Color, Component, EventTouch, Graphics, Label, Node, Sprite, SpriteFrame, tween, Tween,
     UITransform, UIOpacity, Vec3, view,
 } from 'cc';
+import { yy } from '../Pioneer/Pioneer';
 
 const { ccclass } = _decorator;
 const QUESTION_COUNT = 4;
@@ -19,6 +20,7 @@ export class AristotleQuestion extends Component {
     private pageTurning = false;
     private showingAnswerPage = false;
     private pendingAnswerIndex = -1;
+    private returningToDesk = false;
     private runToken = 0;
     private layoutScale = 1;
     private rootTransform: UITransform = null;
@@ -90,6 +92,7 @@ export class AristotleQuestion extends Component {
         this.pageTurning = false;
         this.showingAnswerPage = false;
         this.pendingAnswerIndex = -1;
+        this.returningToDesk = false;
         this.asked.fill(false);
         this.collected.fill(false);
         this.stopClipGlow();
@@ -125,6 +128,7 @@ export class AristotleQuestion extends Component {
 
         this.rootTransform = this.node.getComponent(UITransform);
         this.aristotle = this.requireChild('Aristotle');
+        this.aristotle.on(Node.EventType.TOUCH_END, this.returnToDesk, this);
         this.notebook = this.requireChild('QuestionNotebook');
         this.notebookOpacity = this.notebook.getComponent(UIOpacity);
         this.questionPage = this.notebook.getChildByName('QuestionPage');
@@ -327,8 +331,26 @@ export class AristotleQuestion extends Component {
                 this.collecting = false;
                 this.guide.active = false;
                 this.stopClipGlow();
+                if (this.collected.every(Boolean)) {
+                    this.guideLabel.string = 'アリストテレスをクリックして机に戻りましょう';
+                    this.guide.active = true;
+                }
             })
             .start();
+    }
+
+    private returnToDesk(event: EventTouch): void {
+        if (this.returningToDesk || this.pageTurning || this.collecting
+            || this.answerOpen || this.answerTransitioning || this.pendingAnswerIndex !== -1
+            || !this.collected.every(Boolean)) return;
+
+        const desk = yy.UI?.getChildByName('DoorMiddle');
+        if (!desk?.isValid) return;
+
+        event.propagationStopped = true;
+        this.returningToDesk = true;
+        this.node.active = false;
+        yy.EventCenter.dispatchEvent(yy.EventName.RETURN_TO_DESK_AFTER_ARISTOTLE);
     }
 
     private createScroll(index: number): Node {
