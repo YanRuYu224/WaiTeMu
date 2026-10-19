@@ -12,6 +12,7 @@ const ANSWER_PAGE_SHIFT_X = 60;
 
 @ccclass('AristotleQuestion')
 export class AristotleQuestion extends Component {
+    private static completedAnswerIndices: number[] = [];
     private initialized = false;
     private dragEnabled = false;
     private answerOpen = false;
@@ -49,6 +50,10 @@ export class AristotleQuestion extends Component {
     private layoutNodes: Node[] = [];
     private layoutPositions: Vec3[] = [];
 
+    public static getCollectedAnswerIndices(): number[] {
+        return [...this.completedAnswerIndices];
+    }
+
     protected onLoad(): void {
         this.ensureInitialized();
         view.on('canvas-resize', this.adaptToScreen, this);
@@ -85,6 +90,7 @@ export class AristotleQuestion extends Component {
     }
 
     private resetData(): void {
+        AristotleQuestion.completedAnswerIndices = [];
         this.dragEnabled = false;
         this.answerOpen = false;
         this.answerTransitioning = false;
@@ -327,6 +333,9 @@ export class AristotleQuestion extends Component {
                 target.active = true;
                 this.answerPanels[index].active = true;
                 this.collected[index] = true;
+                AristotleQuestion.completedAnswerIndices = this.collected
+                    .map((isCollected, answerIndex) => isCollected ? answerIndex : -1)
+                    .filter(answerIndex => answerIndex !== -1);
                 this.pendingAnswerIndex = -1;
                 this.collecting = false;
                 this.guide.active = false;
@@ -357,7 +366,7 @@ export class AristotleQuestion extends Component {
         const scroll = new Node(`AnswerScroll${index}`);
         scroll.layer = this.node.layer;
         scroll.parent = this.node;
-        scroll.setPosition(-240, -60, 0);
+        scroll.setPosition(-300, 50, 0);
         scroll.addComponent(UITransform).setContentSize(140, 90);
 
         const art = new Node('ScrollImage');

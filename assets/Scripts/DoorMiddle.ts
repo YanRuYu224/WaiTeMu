@@ -4,6 +4,7 @@ import { yy } from '../Pioneer/Pioneer';
 import { TypeWrite } from './TypeWrite';
 import { QuestionCollection, showQuestionCollection } from './QuestionCollection';
 import { showSceneThree } from './SceneThreeFlow';
+import { showSceneThreeTelescope } from './SceneThreeTelescopeFlow';
 const { ccclass, property } = _decorator;
 
 @ccclass('DoorMiddle')
@@ -35,10 +36,10 @@ export class DoorMiddle extends DoorLeft {
     private messenger_placed = false;
     private messenger_reopen_enabled = false;
     private telescope_item: Node = null;
-    private telescope_start_position: Vec3 = new Vec3();
-    private telescope_drag_offset: Vec3 = new Vec3();
-    private telescope_dragging = false;
-    private telescope_drag_enabled = false;
+    private telescope_press_location: Vec3 = new Vec3();
+    private telescope_click_pending = false;
+    private telescope_click_enabled = false;
+    private scene_three_opening = false;
     private notebook: Node = null;
     private collection_finished = false;
     private moving_item_indices: Set<number> = new Set();
@@ -54,7 +55,7 @@ export class DoorMiddle extends DoorLeft {
         yy.EventCenter.removeTargetListeners(this);
         this.disableCelestialDrag();
         this.disableMessengerDrag();
-        this.disableTelescopeDrag();
+        this.disableTelescopeClick();
         if (this.messenger_item) {
             this.messenger_item.off(Node.EventType.TOUCH_END, this.reopenMessenger, this);
         }
@@ -310,20 +311,28 @@ export class DoorMiddle extends DoorLeft {
     }
 
     private async openSceneThree(screen: 'galileo' | 'telescope'): Promise<void> {
-        this.node.active = false;
+        if (this.scene_three_opening) return;
+        this.scene_three_opening = true;
         try {
-            await showSceneThree(screen, () => {
+            const onExit = () => {
                 if (!this.node.isValid) return;
-                if (screen === 'telescope' && this.telescope_item?.isValid) {
-                    this.telescope_item.setPosition(this.telescope_start_position);
-                }
                 this.node.active = true;
                 this.enableMessengerReopen();
-                this.enableTelescopeDrag();
-            });
+                this.enableTelescopeClick();
+            };
+            if (screen === 'telescope') await showSceneThreeTelescope(onExit);
+            else await showSceneThree(onExit);
+            if (this.node.isValid) this.node.active = false;
         } catch (error) {
             console.error('场景3加载失败', error);
-            if (this.node.isValid) this.node.active = true;
+            if (this.node.isValid) {
+                this.node.active = true;
+                if (screen === 'telescope' && this.telescope_item?.isValid) {
+                    this.enableTelescopeClick();
+                }
+            }
+        } finally {
+            this.scene_three_opening = false;
         }
     }
 
@@ -339,80 +348,50 @@ export class DoorMiddle extends DoorLeft {
         void this.openSceneThree('galileo');
     }
 
-    private enableTelescopeDrag(): void {
-        if (this.telescope_drag_enabled) return;
+    private enableTelescopeClick(): void {
+        if (this.telescope_click_enabled) return;
         // desk_item 的下标与物品编号一致，3 对应望远镜。
         this.telescope_item = this.desk_item[3];
         if (!this.telescope_item?.isValid) return;
-        if (this.telescope_start_position.lengthSqr() === 0) {
-            this.telescope_start_position.set(this.telescope_item.position);
-        }
         this.telescope_item.on(Node.EventType.TOUCH_START, this.onTelescopeTouchStart, this);
-        this.telescope_item.on(Node.EventType.TOUCH_MOVE, this.onTelescopeTouchMove, this);
         this.telescope_item.on(Node.EventType.TOUCH_END, this.onTelescopeTouchEnd, this);
         this.telescope_item.on(Node.EventType.TOUCH_CANCEL, this.onTelescopeTouchCancel, this);
-        this.telescope_drag_enabled = true;
+        this.telescope_click_enabled = true;
     }
 
-    private disableTelescopeDrag(): void {
+    private disableTelescopeClick(): void {
         if (!this.telescope_item) return;
         this.telescope_item.off(Node.EventType.TOUCH_START, this.onTelescopeTouchStart, this);
-        this.telescope_item.off(Node.EventType.TOUCH_MOVE, this.onTelescopeTouchMove, this);
         this.telescope_item.off(Node.EventType.TOUCH_END, this.onTelescopeTouchEnd, this);
         this.telescope_item.off(Node.EventType.TOUCH_CANCEL, this.onTelescopeTouchCancel, this);
-        this.telescope_drag_enabled = false;
-        this.telescope_dragging = false;
+        this.telescope_click_enabled = false;
+        this.telescope_click_pending = false;
     }
 
     private onTelescopeTouchStart(event: EventTouch): void {
-        const point = this.getTouchPositionInDesk(event, this.telescope_item);
-        if (!point) return;
-        this.telescope_dragging = true;
-        this.telescope_drag_offset.set(
-            point.x - this.telescope_item.position.x,
-            point.y - this.telescope_item.position.y, 0,
-        );
-        event.propagationStopped = true;
-    }
-
-    private onTelescopeTouchMove(event: EventTouch): void {
-        if (!this.telescope_dragging) return;
-        const point = this.getTouchPositionInDesk(event, this.telescope_item);
-        if (!point) return;
-        this.telescope_item.setPosition(
-            point.x - this.telescope_drag_offset.x,
-            point.y - this.telescope_drag_offset.y,
-            this.telescope_item.position.z,
-        );
+        const location = event.getUILocation();
+        this.telescope_press_location.set(location.x, location.y, 0);
+        this.telescope_click_pending = true;
         event.propagationStopped = true;
     }
 
     private onTelescopeTouchEnd(event: EventTouch): void {
-        if (!this.telescope_dragging) return;
-        this.telescope_dragging = false;
+        if (!this.telescope_click_pending) return;
+        this.telescope_click_pending = false;
         event.propagationStopped = true;
-        const position = this.telescope_item.position;
-        const offsetX = position.x - this.celestial_drop_position.x;
-        const offsetY = position.y - this.celestial_drop_position.y;
-        const accepted = offsetX * offsetX + offsetY * offsetY
-            <= this.celestial_drop_radius * this.celestial_drop_radius;
-        if (accepted) this.disableTelescopeDrag();
-        tween(this.telescope_item)
-            .to(0.2, { position: (accepted
-                ? this.celestial_drop_position : this.telescope_start_position).clone() })
-            .call(() => {
-                if (accepted) void this.openSceneThree('telescope');
-            })
-            .start();
+        const location = event.getUILocation();
+        const dx = location.x - this.telescope_press_location.x;
+        const dy = location.y - this.telescope_press_location.y;
+        if (dx * dx + dy * dy > 18 * 18) return;
+
+        this.disableTelescopeClick();
+        void this.openSceneThree('telescope');
     }
 
     private onTelescopeTouchCancel(event: EventTouch): void {
-        if (!this.telescope_dragging) return;
-        this.telescope_dragging = false;
+        if (!this.telescope_click_pending) return;
+        this.telescope_click_pending = false;
         event.propagationStopped = true;
-        tween(this.telescope_item)
-            .to(0.2, { position: this.telescope_start_position.clone() })
-            .start();
     }
 
     private async startQuestionCollectionFlow() {
