@@ -1,6 +1,7 @@
 
 export let StorageName = {
     USER_BAG_ITEM: "USER_BAG_ITEM",
+    SCENE_THREE_IDEA_ITEMS: "SCENE_THREE_IDEA_ITEMS",
 }
 
 

@@ -1,5 +1,6 @@
 import { _decorator, Component, Node, UITransform, view } from 'cc';
 import { yy } from '../Pioneer/Pioneer';
+import { Item, ItemType } from './Item';
 import {
     SceneThreeObservation, SceneThreeTelescopeActions, SceneThreeTelescopeView,
 } from './SceneThreeTelescopeView';
@@ -21,12 +22,7 @@ export class SceneThreeTelescopeFlow extends Component {
             this.viewingClue = clue;
             this.refresh();
         },
-        observationCollected: clue => {
-            if (clue === 'moon') this.observedMoon = true;
-            else this.observedJupiter = true;
-            this.viewingClue = null;
-            this.refresh();
-        },
+        observationCollected: clue => this.collectObservation(clue),
     };
 
     protected onLoad(): void {
@@ -42,6 +38,8 @@ export class SceneThreeTelescopeFlow extends Component {
 
     public open(onExit: () => void): void {
         this.onExit = onExit;
+        this.observedMoon = Item.hasBeenCollected(ItemType.Moon);
+        this.observedJupiter = Item.hasBeenCollected(ItemType.Jupiter);
         this.node.active = true;
         if (!this.view) {
             this.view = this.getComponent(SceneThreeTelescopeView)
@@ -57,6 +55,17 @@ export class SceneThreeTelescopeFlow extends Component {
             observedJupiter: this.observedJupiter,
             viewingClue: this.viewingClue,
         }, this.actions);
+    }
+
+    private collectObservation(clue: SceneThreeObservation): void {
+        if (clue === 'moon' ? this.observedMoon : this.observedJupiter) return;
+        if (clue === 'moon') this.observedMoon = true;
+        else this.observedJupiter = true;
+        this.viewingClue = null;
+        this.refresh();
+
+        const type = clue === 'moon' ? ItemType.Moon : ItemType.Jupiter;
+        Item.giveToBag(type);
     }
 
     private close(): void {

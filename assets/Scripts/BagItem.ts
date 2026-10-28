@@ -1,5 +1,6 @@
-import { _decorator, Collider2D, Component, Contact2DType, Node, Sprite, SpriteFrame, UITransform, Vec3 } from 'cc';
+import { _decorator, Component, Node, Sprite, SpriteFrame } from 'cc';
 import { yy } from '../Pioneer/Pioneer';
+import { ItemType } from './Item';
 const { ccclass, property } = _decorator;
 
 @ccclass('BagItem')
@@ -44,13 +45,28 @@ export class BagItem extends Component {
     init(index) {
         this.index = index;
         if (this.item_sprites[index]) {
+            this.item_sprite.node.active = true;
             this.item_sprite.spriteFrame = this.item_sprites[index];
-            this.light_sprite.spriteFrame = this.light_sprites[index];
+            this.light_sprite.spriteFrame = this.light_sprites[index] ?? null;
+            this.light_sprite.node.active = false;
+
+            // The gravity image has about three times the moon thumbnail's dimensions.
+            const scale = index === ItemType.Gravity ? 0.331
+                : index === ItemType.Moon || index === ItemType.Jupiter ? 1 : 0.3;
+            this.item_sprite.node.setScale(scale, scale, 1);
         }
     }
 
+    clear(): void {
+        this.index = -1;
+        this.item_sprite.spriteFrame = null;
+        this.light_sprite.spriteFrame = null;
+        this.light_sprite.node.active = false;
+        this.item_sprite.node.active = false;
+    }
+
     onEnterItem() {
-        this.light_sprite.node.active = true;
+        this.light_sprite.node.active = !!this.light_sprite.spriteFrame;
     }
 
     onLeaveItem() {

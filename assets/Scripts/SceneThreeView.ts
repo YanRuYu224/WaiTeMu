@@ -1,35 +1,26 @@
 import {
-    _decorator, Component, EventTouch, Node, tween, UITransform, Vec3, view,
+    _decorator, Component, EventTouch, Node, tween, UITransform, Vec2, Vec3, view,
 } from 'cc';
-import { yy } from '../Pioneer/Pioneer';
 
 const { ccclass } = _decorator;
-export type SceneThreeScreen = 'galileo' | 'gravity' | 'choice' | 'ending' | 'ideas';
+const ANSWERS_WITH_OWN_BUBBLE = new Set([0, 1, 2, 3]);
 export type SceneThreeClue = 'moon' | 'jupiter' | 'gravity';
 
 export interface SceneThreeViewData {
-    screen: SceneThreeScreen;
-    gravityDone: boolean;
     answerIndices: number[];
     deliveredAnswers: number[];
     notebookOpened: boolean;
     selectedClue: SceneThreeClue | null;
     selectedAnswerIndex: number | null;
+    characterClicked: boolean;
     dialogueState: 'none' | 'missing' | 'prompt' | 'quote' | 'no-answer';
-    ending: 'confess' | 'refuse' | null;
 }
 
 export interface SceneThreeViewActions {
     close(): void;
     toggleNotebook(): void;
     characterAction(): void;
-    openBook(): void;
     ask(answerIndex: number): void;
-    showNoAnswer(): void;
-    collectAnswer(answerIndex: number): void;
-    gravityFinished(): void;
-    chooseEnding(kind: 'confess' | 'refuse'): void;
-    back(): void;
 }
 
 /** Presentation adapter for the authored SceneThree prefab. It never creates UI nodes. */
@@ -37,19 +28,12 @@ export interface SceneThreeViewActions {
 export class SceneThreeView extends Component {
     private data: SceneThreeViewData = null;
     private actions: SceneThreeViewActions = null;
-    private groups: Record<SceneThreeScreen, Node> = null;
-    private ideaQuestionText: Node = null;
+    private galileo: Node = null;
     private readonly answerDrag = new Map<number, { node: Node; start: Vec3; offset: Vec3 }>();
+    private readonly removedAnswers = new Set<number>();
 
     protected onLoad(): void {
-        this.groups = {
-            galileo: this.requireNode('Galileo'),
-            gravity: this.requireNode('Gravity'),
-            choice: this.requireNode('Choice'),
-            ending: this.requireNode('Ending'),
-            ideas: this.requireNode('IdeaPage'),
-        };
-        this.ideaQuestionText = this.requireNode('IdeaQuestionText');
+        this.galileo = this.requireNode('Galileo');
         this.bindInteractions();
         view.on('canvas-resize', this.adaptToScreen, this);
         view.on('design-resolution-changed', this.adaptToScreen, this);
@@ -66,56 +50,63 @@ export class SceneThreeView extends Component {
         this.adaptToScreen();
     }
 
+    public removeAnswer(answerIndex: number): void {
+        if (this.removedAnswers.has(answerIndex)) return;
+        const answer = this.requireNode('Galileo/NotebookToggle')
+            .getChildByName(`Answer${answerIndex}`);
+        if (!answer) return;
+        this.removedAnswers.add(answerIndex);
+        this.answerDrag.delete(answerIndex);
+        answer.removeFromParent();
+        answer.destroy();
+    }
+
+    public isPointOnCharacter(point: Vec2): boolean {
+        const character = ['CharacterIdle', 'CharacterOpinion', 'CharacterMissing']
+            .map(name => this.requireNode(`Galileo/${name}`)).find(node => node.activeInHierarchy);
+        return character?.getComponent(UITransform)?.getBoundingBoxToWorld().contains(point) ?? false;
+    }
+
     public refresh(data: SceneThreeViewData, actions: SceneThreeViewActions): void {
         this.data = data;
         this.actions = actions;
-        const showingIdeas = data.screen === 'ideas';
-        this.ideaQuestionText.active = showingIdeas;
-        for (const screen of Object.keys(this.groups) as SceneThreeScreen[]) {
-            this.groups[screen].active = screen === data.screen || (showingIdeas && screen === 'galileo');
-        }
-        if (showingIdeas) {
-            for (const child of this.groups.galileo.children) {
-                child.active = child.name === 'Background' || child.name === 'Back';
-            }
-        }
-        if (data.screen === 'galileo') this.refreshGalileo();
-        else if (data.screen === 'ending') this.refreshEnding();
+        this.galileo.active = true;
+        this.refreshGalileo();
     }
 
     private refreshGalileo(): void {
         const d = this.data;
+        const answerResponseShown = d.dialogueState === 'prompt'
+            && d.selectedAnswerIndex !== null && ANSWERS_WITH_OWN_BUBBLE.has(d.selectedAnswerIndex);
         const character = d.dialogueState === 'missing' ? 'CharacterMissing'
             : d.selectedClue ? 'CharacterOpinion' : 'CharacterIdle';
         this.active('Galileo/CharacterIdle', character === 'CharacterIdle');
         this.active('Galileo/CharacterOpinion', character === 'CharacterOpinion');
         this.active('Galileo/CharacterMissing', character === 'CharacterMissing');
-        this.active('Galileo/ClickHint', d.dialogueState === 'quote');
-        this.active('Galileo/PromptBubble', d.dialogueState === 'prompt');
-        this.active('Galileo/OpenBookHint', this.allCollected() && d.notebookOpened);
+        this.active('Galileo/ClickHint', !d.characterClicked && d.dialogueState === 'none');
+        this.active('Galileo/PromptBubble', (d.dialogueState === 'prompt' && !answerResponseShown)
+            || (d.characterClicked && d.dialogueState === 'none'));
+        this.active('Galileo/Answer0Bubble', answerResponseShown && d.selectedAnswerIndex === 0);
+        this.active('Galileo/Answer1Bubble', answerResponseShown && d.selectedAnswerIndex === 1);
+        this.active('Galileo/Answer2Bubble', answerResponseShown && d.selectedAnswerIndex === 2);
+        this.active('Galileo/Answer3Bubble', answerResponseShown && d.selectedAnswerIndex === 3);
+        this.active('Galileo/OpenBookHint', false);
         const notebookHandle = this.requireNode('Galileo/NotebookToggle');
         notebookHandle.setPosition(d.notebookOpened ? new Vec3(580, -60, 0) : new Vec3(1010, -60, 0));
         this.active('Galileo/NotebookToggle', true);
         for (const answerIndex of [0, 1, 2, 3]) {
-            this.active(`Galileo/NotebookToggle/Answer${answerIndex}`,
-                d.notebookOpened && d.dialogueState !== 'quote'
-                && d.answerIndices.includes(answerIndex) && !d.deliveredAnswers.includes(answerIndex));
+            const answerNode = notebookHandle.getChildByName(`Answer${answerIndex}`);
+            if (ANSWERS_WITH_OWN_BUBBLE.has(answerIndex) && !answerNode?.isValid) continue;
+            if (!answerNode?.isValid) throw new Error(`SceneThree.prefab 缺少显示节点：Answer${answerIndex}`);
+            answerNode.active = d.notebookOpened && d.dialogueState !== 'quote'
+                && d.answerIndices.includes(answerIndex) && !d.deliveredAnswers.includes(answerIndex)
+                && !(answerIndex === d.selectedAnswerIndex && answerResponseShown);
         }
         this.active('Galileo/UnansweredTitle', false);
         this.active('Galileo/NoAnswer', false);
         for (const clue of ['moon', 'jupiter', 'gravity'] as SceneThreeClue[]) {
             this.active(`Galileo/${this.capital(clue)}Dialogue`, false);
         }
-        this.active('Galileo/RecordAnswer', false);
-    }
-
-    private refreshEnding(): void {
-        const confess = this.data.ending === 'confess';
-        this.active('Ending/ConfessBackground', confess);
-        this.active('Ending/ConfessMessenger', confess);
-        this.active('Ending/RefuseBackground', !confess);
-        this.active('Ending/ExecutionFire', !confess);
-        this.active('Ending/ExecutionText', !confess);
     }
 
     private bindInteractions(): void {
@@ -126,24 +117,11 @@ export class SceneThreeView extends Component {
         this.touch('Galileo/NotebookToggle', () => {
             this.actions.toggleNotebook();
         });
-        this.touch('Galileo/OpenBookHint', () => this.actions.openBook());
         for (const answerIndex of [0, 1, 2, 3]) {
             this.bindAnswerDrag(answerIndex, `Galileo/NotebookToggle/Answer${answerIndex}`);
         }
-        this.touch('Galileo/ClickHint', () => this.collectSelectedAnswer());
-        this.touch('Galileo/RecordAnswer', () => this.collectSelectedAnswer());
+        this.touch('Galileo/ClickHint', () => this.actions.characterAction());
 
-        this.touch('Gravity/Back', () => this.actions.back());
-        this.touch('Gravity/ThrowButton', () => { void this.playGravityExperiment(); });
-        this.touch('Choice/Back', () => this.actions.back());
-        this.touch('Choice/Confess', () => this.actions.chooseEnding('confess'));
-        this.touch('Choice/Refuse', () => this.actions.chooseEnding('refuse'));
-    }
-
-    private async playGravityExperiment(): Promise<void> {
-        const clip = await yy.AssetManager.loadVideo('Art', 'Video/Scene3/重力实验/落下动画');
-        await yy.VideoManager.playLocalVideo({ clip });
-        if (this.node.isValid) this.actions.gravityFinished();
     }
 
     private bindAnswerDrag(answerIndex: number, path: string): void {
@@ -177,9 +155,12 @@ export class SceneThreeView extends Component {
         if (!drag) return;
         this.answerDrag.delete(answerIndex);
         event.propagationStopped = true;
-        const rootPosition = this.positionInRoot(drag.node);
-        const droppedOnCharacter = Math.abs(rootPosition.x + 285) < 330
-            && Math.abs(rootPosition.y + 120) < 350;
+        const droppedOnCharacter = this.isPointOnCharacter(event.getUILocation());
+        if (droppedOnCharacter && ANSWERS_WITH_OWN_BUBBLE.has(answerIndex)) {
+            this.actions.ask(answerIndex);
+            this.removeAnswer(answerIndex);
+            return;
+        }
         tween(drag.node).to(0.16, { position: drag.start.clone() })
             .call(() => { if (droppedOnCharacter) this.actions.ask(answerIndex); })
             .start();
@@ -191,18 +172,6 @@ export class SceneThreeView extends Component {
         this.answerDrag.delete(answerIndex);
         event.propagationStopped = true;
         tween(drag.node).to(0.16, { position: drag.start.clone() }).start();
-    }
-
-    private collectSelectedAnswer(): void {
-        if (this.data?.selectedAnswerIndex !== null && this.data?.selectedAnswerIndex !== undefined
-            && this.data.dialogueState === 'quote') {
-            this.actions.collectAnswer(this.data.selectedAnswerIndex);
-        }
-    }
-
-    private allCollected(): boolean {
-        return this.data.answerIndices.length > 0
-            && this.data.answerIndices.every(answerIndex => this.data.deliveredAnswers.includes(answerIndex));
     }
 
     private capital(value: string): string {
@@ -230,10 +199,6 @@ export class SceneThreeView extends Component {
     private touchPosition(event: EventTouch, parent: Node = this.node): Vec3 {
         const point = event.getUILocation();
         return parent.getComponent(UITransform).convertToNodeSpaceAR(new Vec3(point.x, point.y, 0));
-    }
-
-    private positionInRoot(node: Node): Vec3 {
-        return this.node.getComponent(UITransform).convertToNodeSpaceAR(node.worldPosition.clone());
     }
 
     private adaptToScreen(): void {

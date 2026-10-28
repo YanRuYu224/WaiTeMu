@@ -1,5 +1,4 @@
 import { _decorator, Component, Node } from 'cc';
-import { yy } from '../Pioneer/Pioneer';
 const { ccclass, property } = _decorator;
 
 @ccclass('DoorLeft')
@@ -12,7 +11,6 @@ export class DoorLeft extends Component {
     }
 
     onClick() {
-        yy.EventCenter.dispatchEvent(yy.EventName.SET_BAG_STATE, false);
         this.node.active = false;
     }
 

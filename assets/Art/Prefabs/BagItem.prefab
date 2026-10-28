@@ -774,6 +774,18 @@
       {
         "__uuid__": "e0a99462-a666-425f-ae51-f0c6ed9647e4@f9941",
         "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "9bd7bf6d-b13e-495a-bb7d-f61f7458a1de@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "cf5c8bd2-f803-465e-a448-9f632cbd5d3a@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "d9b20f46-cebf-41be-b99f-904c65f43578@f9941",
+        "__expectedType__": "cc.SpriteFrame"
       }
     ],
     "item_sprite": {
@@ -799,7 +811,10 @@
       {
         "__uuid__": "8fc0020d-e15a-48b4-869f-acb713c96fa0@f9941",
         "__expectedType__": "cc.SpriteFrame"
-      }
+      },
+      null,
+      null,
+      null
     ],
     "light_sprite": {
       "__id__": 6

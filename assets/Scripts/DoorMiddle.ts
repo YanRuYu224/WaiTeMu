@@ -102,7 +102,6 @@ export class DoorMiddle extends DoorLeft {
         this.type_write.textContent = 'これで大丈夫でしょう';
         await this.type_write.start();
         this.type_write.getComponent(Label).string = '';
-        yy.EventCenter.dispatchEvent(yy.EventName.DESTROY_BAG);
         this.notebook = await yy.UIManager.ShowUI("Prefabs/NoteBook", yy.Top);
     }
 
