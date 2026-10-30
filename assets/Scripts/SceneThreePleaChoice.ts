@@ -1,4 +1,4 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Component, game, Node } from 'cc';
 import { yy } from '../Pioneer/Pioneer';
 const { ccclass, property } = _decorator;
 
@@ -24,11 +24,13 @@ export class SceneThreePleaChoice extends Component {
     async onError() {
         const clip = await yy.AssetManager.loadVideo('Art', 'Video/烧书');
         await yy.VideoManager.playLocalVideo({ clip });
+        game.end();
     }
 
     async onNoError() {
         const clip = await yy.AssetManager.loadVideo('Art', 'Video/异端火');
         await yy.VideoManager.playLocalVideo({ clip });
+        game.end();
     }
 }
 
